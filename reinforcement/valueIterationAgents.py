@@ -231,3 +231,76 @@ class PrioritizedSweepingValueIterationAgent(AsynchronousValueIterationAgent):
     def runValueIteration(self):
         "*** YOUR CODE HERE ***"
 
+        predecessors = self.getAllPredecessors()
+        
+        queue = util.PriorityQueue()
+
+        for state in self.mdp.getStates():
+
+            if self.mdp.isTerminal(state):
+                continue
+            
+            maxQ = None
+            for action in self.mdp.getPossibleActions(state):
+                q = self.computeQValueFromValues(state, action)
+                
+                if maxQ == None or q > maxQ:
+                    maxQ = q
+
+            diff = abs(self.values[state] - maxQ)
+            queue.update(state, -diff)
+            
+        for i in range(self.iterations):
+
+            if queue.isEmpty():
+                break
+
+            s = queue.pop()
+
+            if not self.mdp.isTerminal(s):
+                maxQ = None
+                for action in self.mdp.getPossibleActions(s):
+                    q = self.computeQValueFromValues(s, action)
+                    
+                    if maxQ == None or q > maxQ:
+                        maxQ = q
+                self.values[s] = maxQ
+
+            for p in predecessors[s]:
+
+                if self.mdp.isTerminal(p):
+                    continue
+
+                maxQ = None
+                for action in self.mdp.getPossibleActions(p):
+                    q = self.computeQValueFromValues(p, action)
+                    
+                    if maxQ == None or q > maxQ:
+                        maxQ = q
+                
+                diff = abs(self.values[p] - maxQ)
+                if diff > self.theta:
+                    queue.update(p, -diff)
+    
+
+    def getAllPredecessors(self):
+        # predecessor of a state s is all states that have a nonzero prob of reaching s by taking action a
+        predecessors = {}
+        
+        for state in self.mdp.getStates():
+
+            if self.mdp.isTerminal(state):
+                continue
+            
+            actions = self.mdp.getPossibleActions(state)
+
+            for action in actions: 
+                next = self.mdp.getTransitionStatesAndProbs(state, action) # (next state, prob)
+                
+                for n, p in next:
+                    if n not in predecessors:
+                        predecessors[n] = set()
+                    if (p != 0):
+                        predecessors[n].add(state)
+
+        return predecessors 
