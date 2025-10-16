@@ -57,11 +57,43 @@ class ValueIterationAgent(ValueEstimationAgent):
         self.discount = discount
         self.iterations = iterations
         self.values = util.Counter() # A Counter is a dict with default 0
+        self.visitedTiles = set()   # A set of tiles that have already been visited
+        self.newTiles = set() # A set of new tiles that need to be visited 
         self.runValueIteration()
 
     def runValueIteration(self):
         # Write value iteration code here
         "*** YOUR CODE HERE ***"
+
+        for i in range(1, self.iterations + 1):
+            # print(f"Iteration {i}:")
+
+            batchValues = util.Counter()
+
+
+            for state in self.mdp.getStates():
+
+                if self.mdp.isTerminal(state):
+                    batchValues[state] = 0
+                    continue
+
+                maxQ = None
+                for action in self.mdp.getPossibleActions(state):
+                    q = self.computeQValueFromValues(state, action)
+                    
+                    if maxQ == None or q > maxQ:
+                        maxQ = q
+                
+                # print(f"\tState: {state}, Max Q: {maxQ}")
+                
+                maxQ = 0 if maxQ == None else maxQ
+                batchValues[state] = maxQ
+            
+            self.values = batchValues.copy()
+
+            # print(f"\tValues: {self.values}")
+
+            
 
 
     def getValue(self, state):
@@ -77,7 +109,13 @@ class ValueIterationAgent(ValueEstimationAgent):
           value function stored in self.values.
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        sum = 0
+        t = self.mdp.getTransitionStatesAndProbs(state, action) # list of (state, prob)
+        for next in t: 
+            r = self.mdp.getReward(state, action, next[0])
+
+            sum += next[1]*(r + (self.discount * self.getValue(next[0])))
+        return sum
 
     def computeActionFromValues(self, state):
         """
@@ -89,7 +127,20 @@ class ValueIterationAgent(ValueEstimationAgent):
           terminal state, you should return None.
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        if self.mdp.isTerminal(state):
+            return None
+        
+
+        actions = self.mdp.getPossibleActions(state)
+
+        if not actions:
+            return None
+        
+        maxAction = max(actions, key=lambda a: self.computeQValueFromValues(state, a))
+        return maxAction
+
+            
+        
 
     def getPolicy(self, state):
         return self.computeActionFromValues(state)
