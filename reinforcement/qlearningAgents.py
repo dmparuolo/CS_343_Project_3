@@ -69,8 +69,8 @@ class QLearningAgent(ReinforcementAgent):
         
         maxQ = float('-inf')
         for action in actions:
-            if self.qVals[(state, action)] > maxQ:
-                maxQ = self.qVals[(state, action)]
+            if self.getQValue(state, action) > maxQ:
+                maxQ = self.getQValue(state, action)
         return maxQ
 
     def computeActionFromQValues(self, state):
@@ -87,8 +87,8 @@ class QLearningAgent(ReinforcementAgent):
         maxQ = float('-inf')
         bestAction = None
         for action in actions:
-            if self.qVals[(state, action)] > maxQ:
-                maxQ = self.qVals[(state, action)]
+            if self.getQValue(state, action) > maxQ:
+                maxQ = self.getQValue(state, action)
                 bestAction = action
         return bestAction
     def getAction(self, state):
@@ -185,14 +185,32 @@ class ApproximateQAgent(PacmanQAgent):
           where * is the dotProduct operator
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        return self.weights * self.featExtractor.getFeatures(state, action)
 
     def update(self, state, action, nextState, reward):
         """
            Should update your weights based on transition
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        # calculate difference: 
+
+        # if not self.weights: 
+        #   keys = self.featExtractor.getFeatures(state, action).keys()
+        #   for key in keys:
+        #       self.weights[key] = 0
+        #   keys = 
+
+        maxNextQ = self.computeValueFromQValues(nextState)
+
+        difference = (reward + (self.discount * maxNextQ)) - self.getQValue(state, action) 
+
+        
+        # print("feat extractor", self.featExtractor.getFeatures(state, action))
+
+
+        for feat in self.featExtractor.getFeatures(state, action).keys():
+            value = self.weights[feat]
+            self.weights[feat] = value + self.alpha * difference * self.featExtractor.getFeatures(state, action)[feat]
 
     def final(self, state):
         "Called at the end of each game."
@@ -203,4 +221,5 @@ class ApproximateQAgent(PacmanQAgent):
         if self.episodesSoFar == self.numTraining:
             # you might want to print your weights here for debugging
             "*** YOUR CODE HERE ***"
+            print("self.weights", self.weights)
             pass
